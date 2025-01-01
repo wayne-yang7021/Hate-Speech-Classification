@@ -17,6 +17,20 @@ body {
     align-items: center;
 }
 
+.green-label {
+    background-color: #4caf50; /* 綠色背景 */
+    display: inline-block;
+    color: white; /* 白色文字 */
+    padding: 5px 10px; /* 內邊距 */
+    font-size: 14px; /* 字體大小 */
+    font-weight: bold; /* 加粗字體 */
+    border-radius: 20px; /* 圓角樣式 */
+    margin-top: 5px; /* 與上方內容的間距 */
+    text-align: center; /* 文字置中 */
+    width: fit-content; /* 自適應寬度 */
+}
+
+
 .post-container {
     width: 100%;
     padding: 20px;

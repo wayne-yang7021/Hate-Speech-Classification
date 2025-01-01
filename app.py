@@ -1,22 +1,152 @@
+# from flask import Flask, render_template, request, url_for
+# import pickle
+# import numpy as np
+# from sklearn.preprocessing import LabelEncoder
+
+# # 載入模型和相關資源
+# with open("./linearSVC/LinearSVC.pkl", "rb") as f:
+#     model = pickle.load(f)
+
+# with open("./linearSVC/dictionary.pkl", "rb") as f:
+#     dictionary = pickle.load(f)
+
+# # 初始化 LabelEncoder 並設定類別
+# label_encoder = LabelEncoder()
+# label_encoder.classes_ = np.array(['Disability', 'Gender', 'Origin', 'Religion', 'Sexual_Orientation'])  # 替換為實際的類別名稱
+
+# # 確定特徵總數（即字典中的最大索引 + 1）
+# num_features = len(dictionary)
+
+# with open("./naiveBayes/bernoulli_naive_bayes.pkl", "rb") as f:
+#     model_data = pickle.load(f)
+
+# class_feature_probs = model_data["class_feature_probs"]
+# class_priors = model_data["class_priors"]
+# selected_features = model_data["selected_features"]
+
+# with open("./naiveBayes/dictionary.pkl", "rb") as f:
+#     naive_dictionary = pickle.load(f)
+
+# naive_label_encoder = LabelEncoder()
+# naive_label_encoder.classes_ = np.array(['Hate', 'Offensive', 'Normal'])
+
+# naive_num_feature = len(naive_dictionary)
+
+
+
+# # 定義將文本轉換為稀疏向量的函式
+# def text_to_sparse_vector(text, dictionary):
+#     """
+#     將文本轉換為稀疏向量表示。
+#     """
+#     sparse_vector = []
+#     words = text.split()
+#     for word in words:
+#         if word in dictionary:
+#             index = dictionary[word]
+#             sparse_vector.append((index, 1))  # 假設使用簡單詞頻
+#     return sparse_vector
+
+# # 將稀疏向量轉換為密集矩陣
+# def sparse_to_dense(sparse_vectors, num_features):
+#     dense_matrix = np.zeros((len(sparse_vectors), num_features))
+#     for i, sparse_vector in enumerate(sparse_vectors):
+#         for index, value in sparse_vector:
+#             dense_matrix[i, index] = value
+#     return dense_matrix
+
+# def predict_bernoulli_naive_bayes(X_test, class_feature_probs, class_priors):
+#     """
+#     Predict using the Bernoulli Naive Bayes model.
+#     """
+#     X_test_binary = (X_test > 0).astype(int)  # Binarize the test data
+#     predictions = []
+
+#     for row in X_test_binary:
+#         max_prob = -np.inf
+#         best_class = None
+
+#         for label, prior in class_priors.items():
+#             log_prob = np.log(prior)  # Start with log(P(class))
+#             for feature_index, feature_value in enumerate(row):
+#                 if feature_value == 1:
+#                     prob = class_feature_probs[label].get(feature_index, 1e-6)
+#                 else:
+#                     prob = 1 - class_feature_probs[label].get(feature_index, 1e-6)
+
+#                 log_prob += np.log(prob)
+
+#             if log_prob > max_prob:
+#                 max_prob = log_prob
+#                 best_class = label
+
+#         predictions.append(best_class)
+#     return predictions
+
+# # 建立 Flask 應用程式
+# app = Flask(__name__)
+
+# @app.route("/", methods=["GET", "POST"])
+# def index():
+#     if request.method == "POST":
+#         user_input = request.form["user_input"]
+        
+#         print("user input:", user_input)
+#         # 處理用戶輸入
+#         sparse_vector = text_to_sparse_vector(user_input, dictionary)
+#         dense_vector = sparse_to_dense([sparse_vector], num_features)
+        
+#         try:
+#             prediction = model.predict(dense_vector)
+#             predicted_class = label_encoder.inverse_transform(prediction)[0]
+#         except ValueError:
+#             predicted_class = "Unknown"
+
+#         print("target prediction: ", predicted_class)
+        
+#         # print("prediction result:", predicted_class)
+#         naive_sparse_vector = text_to_sparse_vector(user_input, naive_dictionary)
+#         naive_dense_vector = sparse_to_dense([naive_sparse_vector], naive_num_feature)
+
+#         # 应用特征选择
+#         dense_vector_selected = naive_dense_vector[:, selected_features]
+
+#         # 使用贝叶斯模型进行预测
+#         naive_y_preds = predict_bernoulli_naive_bayes(dense_vector_selected, class_feature_probs, class_priors)
+#         naive_predicted_class = naive_label_encoder.inverse_transform([naive_y_preds[0]])[0]
+
+#         print("sentiment prediction: ", naive_predicted_class)
+#         # 返回預測結果
+#         return render_template(
+#             "index.html",
+#             post_content = user_input,
+#             classification_label = predicted_class,
+#             naive_classification_label = naive_predicted_class
+#         )
+        
+    
+#     return render_template("index.html", post_content=None, classification_label=None)
+
+# if __name__ == '__main__':
+#     app.run(debug = True)
 from flask import Flask, render_template, request, url_for
 import pickle
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
+from scipy.special import softmax
 
-# 載入模型和相關資源
+# Load the LinearSVC model and dictionary
 with open("./linearSVC/LinearSVC.pkl", "rb") as f:
     model = pickle.load(f)
 
 with open("./linearSVC/dictionary.pkl", "rb") as f:
     dictionary = pickle.load(f)
 
-# 初始化 LabelEncoder 並設定類別
+# Initialize LabelEncoder with class labels for LinearSVC
 label_encoder = LabelEncoder()
-label_encoder.classes_ = np.array(['Disability', 'Gender', 'Origin', 'Religion', 'Sexual_Orientation'])  # 替換為實際的類別名稱
+label_encoder.classes_ = np.array(['Disability', 'Gender', 'Origin', 'Religion', 'Sexual_Orientation'])
 
-# 確定特徵總數（即字典中的最大索引 + 1）
-num_features = len(dictionary)
-
+# Load the Naive Bayes model and dictionary
 with open("./naiveBayes/bernoulli_naive_bayes.pkl", "rb") as f:
     model_data = pickle.load(f)
 
@@ -27,39 +157,61 @@ selected_features = model_data["selected_features"]
 with open("./naiveBayes/dictionary.pkl", "rb") as f:
     naive_dictionary = pickle.load(f)
 
+# Initialize LabelEncoder with class labels for Naive Bayes
 naive_label_encoder = LabelEncoder()
 naive_label_encoder.classes_ = np.array(['Hate', 'Offensive', 'Normal'])
 
-naive_num_feature = len(naive_dictionary)
-
-
-
-# 定義將文本轉換為稀疏向量的函式
+# Define helper functions
 def text_to_sparse_vector(text, dictionary):
     """
-    將文本轉換為稀疏向量表示。
+    Converts input text into a sparse vector based on the provided dictionary.
     """
     sparse_vector = []
     words = text.split()
     for word in words:
         if word in dictionary:
             index = dictionary[word]
-            sparse_vector.append((index, 1))  # 假設使用簡單詞頻
+            sparse_vector.append((index, 1))
     return sparse_vector
 
-# 將稀疏向量轉換為密集矩陣
 def sparse_to_dense(sparse_vectors, num_features):
+    """
+    Converts sparse vectors to a dense matrix representation.
+    """
     dense_matrix = np.zeros((len(sparse_vectors), num_features))
     for i, sparse_vector in enumerate(sparse_vectors):
         for index, value in sparse_vector:
             dense_matrix[i, index] = value
     return dense_matrix
 
+def predict_with_threshold(model, X, threshold, label_encoder):
+    """
+    Predicts using the LinearSVC model with a threshold for classification confidence.
+    Returns 'Accept' if all probabilities are below the threshold.
+    """
+    # Get decision scores from the model
+    decision_scores = model.decision_function(X)
+    
+    # Convert scores to pseudo-probabilities using softmax
+    probabilities = softmax(decision_scores, axis=1)
+    
+    predictions = []
+    for i, probs in enumerate(probabilities):
+        if max(probs) < threshold:
+            # If all probabilities are below the threshold, classify as 'Accept'
+            predictions.append('No Target')
+        else:
+            # Otherwise, classify based on the highest probability
+            predicted_index = np.argmax(probs)
+            predictions.append(label_encoder.inverse_transform([predicted_index])[0])
+    
+    return predictions
+
 def predict_bernoulli_naive_bayes(X_test, class_feature_probs, class_priors):
     """
     Predict using the Bernoulli Naive Bayes model.
     """
-    X_test_binary = (X_test > 0).astype(int)  # Binarize the test data
+    X_test_binary = (X_test > 0).astype(int)
     predictions = []
 
     for row in X_test_binary:
@@ -67,7 +219,7 @@ def predict_bernoulli_naive_bayes(X_test, class_feature_probs, class_priors):
         best_class = None
 
         for label, prior in class_priors.items():
-            log_prob = np.log(prior)  # Start with log(P(class))
+            log_prob = np.log(prior)
             for feature_index, feature_value in enumerate(row):
                 if feature_value == 1:
                     prob = class_feature_probs[label].get(feature_index, 1e-6)
@@ -83,49 +235,53 @@ def predict_bernoulli_naive_bayes(X_test, class_feature_probs, class_priors):
         predictions.append(best_class)
     return predictions
 
-# 建立 Flask 應用程式
+# Initialize Flask app
 app = Flask(__name__)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
+        # Retrieve user input
         user_input = request.form["user_input"]
         
-        print("user input:", user_input)
-        # 處理用戶輸入
+        print("User input:", user_input)
+
+        # Preprocess input for LinearSVC
         sparse_vector = text_to_sparse_vector(user_input, dictionary)
-        dense_vector = sparse_to_dense([sparse_vector], num_features)
+        dense_vector = sparse_to_dense([sparse_vector], len(dictionary))
         
-        try:
-            prediction = model.predict(dense_vector)
-            predicted_class = label_encoder.inverse_transform(prediction)[0]
-        except ValueError:
-            predicted_class = "Unknown"
+        # Set threshold for classification
+        threshold = 0.4
 
-        print("target prediction: ", predicted_class)
-        
-        # print("prediction result:", predicted_class)
+        # Use prediction with threshold for LinearSVC
+        predictions_with_threshold = predict_with_threshold(model, dense_vector, threshold, label_encoder)
+        predicted_class = predictions_with_threshold[0]
+
+        print("Target prediction (LinearSVC):", predicted_class)
+
+        # Preprocess input for Naive Bayes
         naive_sparse_vector = text_to_sparse_vector(user_input, naive_dictionary)
-        naive_dense_vector = sparse_to_dense([naive_sparse_vector], naive_num_feature)
+        naive_dense_vector = sparse_to_dense([naive_sparse_vector], len(naive_dictionary))
 
-        # 应用特征选择
+        # Apply feature selection
         dense_vector_selected = naive_dense_vector[:, selected_features]
 
-        # 使用贝叶斯模型进行预测
+        # Predict using Naive Bayes with threshold
         naive_y_preds = predict_bernoulli_naive_bayes(dense_vector_selected, class_feature_probs, class_priors)
         naive_predicted_class = naive_label_encoder.inverse_transform([naive_y_preds[0]])[0]
 
-        print("sentiment prediction: ", naive_predicted_class)
-        # 返回預測結果
+        print("Sentiment prediction (Naive Bayes):", naive_predicted_class)
+
+        # Render results
         return render_template(
             "index.html",
-            post_content = user_input,
-            classification_label = predicted_class,
-            naive_classification_label = naive_predicted_class
+            post_content=user_input,
+            classification_label=predicted_class,
+            naive_classification_label=naive_predicted_class
         )
-        
     
-    return render_template("index.html", post_content=None, classification_label=None)
+    # Default render for GET requests
+    return render_template("index.html", post_content=None, classification_label=None, naive_classification_label=None)
 
 if __name__ == '__main__':
-    app.run(debug = True)
+    app.run(debug=True)

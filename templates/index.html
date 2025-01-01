@@ -24,8 +24,13 @@
             </div>
             <p><strong>Your evaluation result:</strong></p>
             <div class="label-display">
-                <span class="classification-label">{{ classification_label }}</span>
-                <span class="classification-label">{{ naive_classification_label }}</span>
+                <span class="{{ 'green-label' if classification_label == 'No Target' else 'classification-label' }}">
+                    {{ classification_label }}
+                </span>
+                <span class="{{ 'green-label' if naive_classification_label == 'Normal' else 'classification-label' }}">
+                    {{ naive_classification_label }}
+                </span>
+                
             </div>
         </div>
         
