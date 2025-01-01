@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Evaluation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="post-container">
+            <h1>Create Your Post</h1>
+            <form method="POST" class="post-form">
+                <textarea name="user_input" placeholder="What's on your mind?" rows="4" required></textarea>
+                <button type="submit">Evaluate</button>
+            </form>
+        </div>
+
+        {% if post_content %}
+        <div class="result-form">
+            <p><strong>Your post content is:</strong></p>
+            <div class="content-box">
+                {{ post_content }}
+            </div>
+            <p><strong>Your evaluation result:</strong></p>
+            <div class="label-display">
+                <span class="classification-label">{{ classification_label }}</span>
+                <span class="classification-label">{{ naive_classification_label }}</span>
+            </div>
+        </div>
+        
+        {% endif %}
+    </div>
+</body>
+</html>
