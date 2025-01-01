@@ -83,30 +83,6 @@ with open("LinearSVC.pkl", "wb") as f:
     pickle.dump(model, f)
 
 # 預測並評估模型
-# # y_preds = model.predict(X_test)
-# threshold = 0.5
-# y_preds_with_threshold = predict_with_threshold(model, X_test, threshold, label_encoder)
-
-# y_test_labels = label_encoder.inverse_transform(y_test)
-
-# report_with_threshold = classification_report(y_test_labels, y_preds_with_threshold, labels=list(label_encoder.classes_) + ['accept'])
-# print(report_with_threshold)
-
-# # 計算混淆矩陣
-# # cm = confusion_matrix(y_test, y_preds_with_threshold)
-# all_labels = list(label_encoder.classes_) + ['accept']
-# cm_with_threshold = confusion_matrix(
-#     y_test_labels, 
-#     y_preds_with_threshold, 
-#     labels=all_labels
-# )
-
-# # 繪製混淆矩陣
-# # disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=label_encoder.classes_)
-# # disp.plot(cmap=plt.cm.Blues, values_format='d')
-# disp_with_threshold = ConfusionMatrixDisplay(confusion_matrix=cm_with_threshold, display_labels=all_labels)
-# disp_with_threshold.plot(cmap=plt.cm.Blues, values_format='d')
-# 預測並評估模型
 y_preds = model.predict(X_test)
 report = classification_report(y_test, y_preds, target_names=label_encoder.classes_)
 print(report)
